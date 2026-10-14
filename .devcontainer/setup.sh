@@ -1,24 +1,25 @@
 #!/bin/bash
 # Installs Airflow once, when the codespace is first created.
-# Safe to re-run: if the venv is already there, it does nothing.
+# Safe to re-run: if Airflow is already there, it skips the install.
 set -euo pipefail
 
 AIRFLOW_VERSION="3.3.2"
 PYTHON_VERSION="3.12"
-VENV="/workspaces/airflow-venv"
 
-# The venv lives OUTSIDE the repo folder, so it is never committed, but still
-# on the persistent /workspaces volume, so it survives stop/start and rebuilds.
-if [ ! -x "$VENV/bin/airflow" ]; then
-  echo "--> creating venv at $VENV"
-  python -m venv "$VENV"
+echo "--> python: $(command -v python) ($(python -V 2>&1))"
 
-  echo "--> installing Apache Airflow $AIRFLOW_VERSION (this takes a few minutes)"
+if ! command -v airflow >/dev/null 2>&1; then
+  echo "--> installing Apache Airflow $AIRFLOW_VERSION (takes a few minutes)"
+  # Installed into the image's own Python, NOT a venv. A venv would need its
+  # bin/ added to PATH, and doing that from devcontainer.json is what broke
+  # this container the first time round. The container is already an isolated
+  # machine - a venv inside it buys nothing and costs a footgun.
+  #
   # The constraints file pins every dependency to a combination Airflow was
-  # actually tested with. Without it pip resolves something subtly broken and
+  # actually tested with. Without it, pip resolves something subtly broken and
   # you find out three weeks later. Never install Airflow without it.
-  "$VENV/bin/pip" install --upgrade pip
-  "$VENV/bin/pip" install \
+  pip install --no-cache-dir --upgrade pip
+  pip install --no-cache-dir \
     "apache-airflow==${AIRFLOW_VERSION}" \
     requests \
     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
@@ -29,7 +30,7 @@ fi
 # Build the metadata database now, so the first `airflow standalone` in class
 # starts in seconds instead of migrating while 40 people watch.
 echo "--> preparing the Airflow database at ${AIRFLOW_HOME}"
-"$VENV/bin/airflow" db migrate
+airflow db migrate
 
 echo
 echo "================================================================"
