@@ -1,0 +1,47 @@
+{
+  "name": "Airflow 3 Class",
+
+  // Ready-made Linux + Python 3.12. Airflow 3.3.2 supports 3.10-3.12;
+  // the constraints file in setup.sh must match this Python version.
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+
+  // Runs ONCE, right after the codespace is built. Students wait, then it works.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  "containerEnv": {
+    // Airflow's own state (db, config, logs) - kept inside the repo folder so
+    // it survives a restart, and gitignored so it never gets committed.
+    "AIRFLOW_HOME": "${containerWorkspaceFolder}/.airflow",
+
+    // Without this, Airflow looks in ~/airflow/dags and students' DAGs never appear.
+    "AIRFLOW__CORE__DAGS_FOLDER": "${containerWorkspaceFolder}/dags",
+
+    // Only the class's DAGs in the UI. Flip to true if you want the 50 built-in examples.
+    "AIRFLOW__CORE__LOAD_EXAMPLES": "false",
+
+    // Pick up an edited DAG in ~5s instead of the default 30s. Nice in a live demo,
+    // wasteful on a real cluster.
+    "AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL": "5",
+
+    // Put the venv on PATH so nobody ever has to type `source .../activate`.
+    "PATH": "/workspaces/airflow-venv/bin:${containerEnv:PATH}"
+  },
+
+  // The Airflow UI. Codespaces pops up a "open in browser" toast when it starts.
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Airflow UI",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/airflow-venv/bin/python"
+      }
+    }
+  }
+}

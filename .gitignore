@@ -1,0 +1,8 @@
+# Airflow's own state: database, config, logs. Regenerated on every machine.
+.airflow/
+
+# Written by the pipelines at runtime, not source.
+dags/data/
+
+__pycache__/
+*.pyc
